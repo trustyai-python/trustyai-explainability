@@ -50,7 +50,7 @@
         <version.org.assertj>3.22.0</version.org.assertj>
         <version.org.awaitility>4.2.0</version.org.awaitility>
 
-        <version.org.optaplanner>8.30.0.Final</version.org.optaplanner>
+        <version.org.optaplanner>9.44.0.Final</version.org.optaplanner>
         <version.org.kie.kogito>1.30.0.Final</version.org.kie.kogito>
 
         <version.surefire.plugin>3.2.5</version.surefire.plugin> <!-- minimum required by JUnit 5 -->
