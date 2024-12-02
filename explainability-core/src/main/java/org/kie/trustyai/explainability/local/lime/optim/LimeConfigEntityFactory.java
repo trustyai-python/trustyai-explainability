@@ -56,8 +56,8 @@ class LimeConfigEntityFactory {
         processors.put(SAMPLING_PERTURBATIONS, (limeConfig, limeConfigEntity) -> limeConfig.withPerturbationContext(
                 limeConfig.getPerturbationContext().getSeed().isPresent()
                         ? new PerturbationContext(limeConfig.getPerturbationContext().getSeed().get(), limeConfig.getPerturbationContext().getRandom(),
-                                (int) limeConfigEntity.asDouble())
-                        : new PerturbationContext(limeConfig.getPerturbationContext().getRandom(), (int) limeConfigEntity.asDouble())));
+                                (int) limeConfigEntity.asDouble(), limeConfig.getPerturbationContext().getStandardDeviation())
+                        : new PerturbationContext(limeConfig.getPerturbationContext().getRandom(), (int) limeConfigEntity.asDouble(), limeConfig.getPerturbationContext().getStandardDeviation())));
         processors.put(PROXIMITY_FILTER_ENABLED, (limeConfig, limeConfigEntity) -> limeConfig.withProximityFilter(limeConfigEntity.asBoolean()));
         processors.put(WEIGHTING_PENALIZE_BALANCE_SPARSE, (limeConfig, limeConfigEntity) -> limeConfig.withPenalizeBalanceSparse(limeConfigEntity.asBoolean()));
         processors.put(SAMPLING_ADAPT_DATASET_VARIANCE, (limeConfig, limeConfigEntity) -> limeConfig.withAdaptiveVariance(limeConfigEntity.asBoolean()));

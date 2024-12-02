@@ -64,7 +64,7 @@ public class LimeConfig {
     /**
      * Context object for perturbing features.
      */
-    private PerturbationContext perturbationContext = new PerturbationContext(new SecureRandom(), 1);
+    private PerturbationContext perturbationContext = new PerturbationContext(new SecureRandom(), 1, 0.01);
 
     /**
      * Whether the explainer should adapt the variance in the generated (perturbed) data when it's not separable.

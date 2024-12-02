@@ -27,21 +27,34 @@ import java.util.Random;
  */
 public class PerturbationContext {
 
+    private static final double DEFAULT_STANDARD_DEVIATION = 0.01;
     private final Optional<Long> seed;
 
     private final Random random;
 
     private final int noOfPerturbations;
 
+    private final double standardDeviation;
+
     public PerturbationContext(Random random, int noOfPerturbations) {
+        this(random, noOfPerturbations, DEFAULT_STANDARD_DEVIATION); // preserving old behavior
+    }
+
+    public PerturbationContext(Random random, int noOfPerturbations, double standardDeviation) {
+        this.standardDeviation = standardDeviation;
         this.seed = Optional.empty();
         this.random = random;
         this.noOfPerturbations = noOfPerturbations;
     }
 
     public PerturbationContext(Long seed, Random random, int noOfPerturbations) {
+        this(seed, random, noOfPerturbations, DEFAULT_STANDARD_DEVIATION);
+    }
+
+    public PerturbationContext(Long seed, Random random, int noOfPerturbations, double standardDeviation) {
         this.seed = Optional.ofNullable(seed);
         this.random = random;
+        this.standardDeviation = standardDeviation;
         if (seed != null) {
             random.setSeed(seed);
         }
@@ -60,12 +73,17 @@ public class PerturbationContext {
         return seed;
     }
 
+    public double getStandardDeviation() {
+        return standardDeviation;
+    }
+
     @Override
     public String toString() {
         return "PerturbationContext{" +
                 "random=" + random +
                 ", noOfPerturbations=" + noOfPerturbations +
                 ", seed=" + seed +
+                ", standardDeviation=" + standardDeviation +
                 '}';
     }
 
@@ -78,11 +96,11 @@ public class PerturbationContext {
             return false;
         }
         PerturbationContext that = (PerturbationContext) o;
-        return noOfPerturbations == that.noOfPerturbations && Objects.equals(seed, that.seed) && Objects.equals(random, that.random);
+        return noOfPerturbations == that.noOfPerturbations && Objects.equals(seed, that.seed) && Objects.equals(random, that.random) && standardDeviation == that.standardDeviation;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(seed, random, noOfPerturbations);
+        return Objects.hash(seed, random, noOfPerturbations, standardDeviation);
     }
 }

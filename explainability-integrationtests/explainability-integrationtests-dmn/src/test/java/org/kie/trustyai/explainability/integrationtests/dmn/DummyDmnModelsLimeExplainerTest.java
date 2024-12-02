@@ -59,7 +59,7 @@ class DummyDmnModelsLimeExplainerTest {
                 .get(Config.INSTANCE.getAsyncTimeout(), Config.INSTANCE.getAsyncTimeUnit());
         Prediction prediction = new SimplePrediction(predictionInput, predictionOutputs.get(0));
         Random random = new Random();
-        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 1);
+        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 1, 1);
         LimeConfig limeConfig = new LimeConfig()
                 .withPerturbationContext(perturbationContext);
         LimeExplainer limeExplainer = new LimeExplainer(limeConfig);
@@ -111,7 +111,7 @@ class DummyDmnModelsLimeExplainerTest {
                 .get(Config.INSTANCE.getAsyncTimeout(), Config.INSTANCE.getAsyncTimeUnit());
         Prediction prediction = new SimplePrediction(predictionInput, predictionOutputs.get(0));
         Random random = new Random();
-        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 1);
+        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 1, 1);
         LimeConfig limeConfig = new LimeConfig()
                 .withPerturbationContext(perturbationContext);
         LimeExplainer limeExplainer = new LimeExplainer(limeConfig);
@@ -183,7 +183,7 @@ class DummyDmnModelsLimeExplainerTest {
                 .get(Config.INSTANCE.getAsyncTimeout(), Config.INSTANCE.getAsyncTimeUnit());
         Prediction prediction = new SimplePrediction(predictionInput, predictionOutputs.get(0));
         Random random = new Random();
-        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 3);
+        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 3, 1);
         LimeConfig limeConfig = new LimeConfig()
                 .withSamples(1000)
                 .withProximityThreshold(.6)

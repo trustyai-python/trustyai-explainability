@@ -158,13 +158,14 @@ public class LimeExplainer implements LocalExplainer<SaliencyResults> {
         // make sure to stay within the max no. of features boundaries
         nextPerturbationSize = Math.min(linearizedTargetInputFeatures.size() - 1, nextPerturbationSize);
         Optional<Long> optionalSeed = perturbationContext.getSeed();
+        double newStandardDeviation = perturbationContext.getStandardDeviation() * 10;
         if (optionalSeed.isPresent()) {
             Long seed = optionalSeed.get();
             newPerturbationContext = new PerturbationContext(seed, perturbationContext.getRandom(),
-                    nextPerturbationSize);
+                    nextPerturbationSize, newStandardDeviation);
         } else {
             newPerturbationContext = new PerturbationContext(perturbationContext.getRandom(),
-                    nextPerturbationSize);
+                    nextPerturbationSize, newStandardDeviation);
         }
         return newPerturbationContext;
     }

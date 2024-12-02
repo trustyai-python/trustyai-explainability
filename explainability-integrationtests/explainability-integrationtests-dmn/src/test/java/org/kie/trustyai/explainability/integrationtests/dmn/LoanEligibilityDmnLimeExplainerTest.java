@@ -66,7 +66,7 @@ class LoanEligibilityDmnLimeExplainerTest {
         Prediction prediction = new SimplePrediction(predictionInput, predictionOutputs.get(0));
         Random random = new Random();
 
-        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 1);
+        PerturbationContext perturbationContext = new PerturbationContext(0L, random, 1, 1);
         LimeConfig limeConfig = new LimeConfig()
                 .withPerturbationContext(perturbationContext);
         LimeExplainer limeExplainer = new LimeExplainer(limeConfig);
@@ -102,7 +102,7 @@ class LoanEligibilityDmnLimeExplainerTest {
         LimeConfigOptimizer limeConfigOptimizer = new LimeConfigOptimizer().withDeterministicExecution(true)
                 .withStepCountLimit(20);
         Random random = new Random();
-        PerturbationContext perturbationContext = new PerturbationContext(seed, random, 1);
+        PerturbationContext perturbationContext = new PerturbationContext(seed, random, 1, 1);
         LimeConfig initialConfig = new LimeConfig()
                 .withPerturbationContext(perturbationContext);
         LimeConfig optimizedConfig = limeConfigOptimizer.optimize(initialConfig, predictions, model);
@@ -129,7 +129,7 @@ class LoanEligibilityDmnLimeExplainerTest {
         LimeConfigOptimizer limeConfigOptimizer = new LimeConfigOptimizer().withDeterministicExecution(true)
                 .forImpactScore().withSampling(false).withStepCountLimit(20);
         Random random = new Random();
-        PerturbationContext perturbationContext = new PerturbationContext(seed, random, 1);
+        PerturbationContext perturbationContext = new PerturbationContext(seed, random, 1, 1);
         LimeConfig initialConfig = new LimeConfig()
                 .withSamples(10)
                 .withPerturbationContext(perturbationContext);
@@ -150,7 +150,7 @@ class LoanEligibilityDmnLimeExplainerTest {
         LimeConfigOptimizer limeConfigOptimizer = new LimeConfigOptimizer().withDeterministicExecution(true)
                 .withWeightedStability(0.4, 0.6).withStepCountLimit(10);
         Random random = new Random();
-        PerturbationContext perturbationContext = new PerturbationContext(seed, random, 1);
+        PerturbationContext perturbationContext = new PerturbationContext(seed, random, 1, 1);
         LimeConfig initialConfig = new LimeConfig()
                 .withPerturbationContext(perturbationContext);
         LimeConfig optimizedConfig = limeConfigOptimizer.optimize(initialConfig, predictions, model);
