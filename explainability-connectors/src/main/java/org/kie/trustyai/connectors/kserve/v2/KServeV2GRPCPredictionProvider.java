@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
 
+import org.kie.trustyai.connectors.grpc.GrpcLoadBalancing;
 import org.kie.trustyai.connectors.kserve.AbstractKServePredictionProvider;
 import org.kie.trustyai.connectors.kserve.v2.grpc.GRPCInferenceServiceGrpc;
 import org.kie.trustyai.connectors.kserve.v2.grpc.InferParameter;
@@ -28,6 +29,8 @@ import io.grpc.ManagedChannelBuilder;
 public class KServeV2GRPCPredictionProvider extends AbstractKServePredictionProvider implements PredictionProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(KServeV2GRPCPredictionProvider.class);
+
+    private static final GrpcLoadBalancing DEFAULT_LOAD_BALANCING = GrpcLoadBalancing.ROUND_ROBIN;
 
     private final KServeConfig kServeConfig;
     private final Map<String, String> optionalParameters;
@@ -125,7 +128,9 @@ public class KServeV2GRPCPredictionProvider extends AbstractKServePredictionProv
         }
 
         // Create a new channel for each prediction request
-        final ManagedChannel localChannel = ManagedChannelBuilder.forTarget(kServeConfig.getTarget())
+        final ManagedChannel localChannel = ManagedChannelBuilder
+                .forTarget(kServeConfig.getTarget())
+                .defaultLoadBalancingPolicy(DEFAULT_LOAD_BALANCING.getValue())
                 .usePlaintext()
                 .build();
 
