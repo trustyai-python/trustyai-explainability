@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 
 import org.kie.trustyai.explainability.model.dataframe.Dataframe;
 import org.kie.trustyai.service.data.metadata.StorageMetadata;
+import org.kie.trustyai.service.endpoints.data.DownloadEndpoint;
+import org.kie.trustyai.service.payloads.data.download.DataRequestPayload;
+import org.kie.trustyai.service.payloads.data.download.MatchOperation;
 import org.kie.trustyai.service.payloads.data.download.RowMatcher;
 import org.kie.trustyai.service.payloads.values.DataType;
 
@@ -15,10 +18,10 @@ import com.fasterxml.jackson.databind.node.ValueNode;
 public class DownloadUtils {
 
     public static DataType getDataType(StorageMetadata storageMetadata, RowMatcher rowMatcher) {
-        if (storageMetadata.getInputSchema().getItems().containsKey(rowMatcher.getColumnName())) {
-            return storageMetadata.getInputSchema().getItems().get(rowMatcher.getColumnName()).getType();
+        if (storageMetadata.getInputSchema().getNameMappedItems().containsKey(rowMatcher.getColumnName())) {
+            return storageMetadata.getInputSchema().getNameMappedItems().get(rowMatcher.getColumnName()).getType();
         } else {
-            return storageMetadata.getOutputSchema().getItems().get(rowMatcher.getColumnName()).getType();
+            return storageMetadata.getOutputSchema().getNameMappedItems().get(rowMatcher.getColumnName()).getType();
         }
     }
 
@@ -133,5 +136,81 @@ public class DownloadUtils {
         } else {
             return df.filterByInternalColumnValue(internalColumn, value -> invert);
         }
+    }
+
+    public static Dataframe applyMatches(Dataframe df, StorageMetadata metadata, DataRequestPayload requestPayload) {
+        for (RowMatcher rowMatcher : requestPayload.getMatchAll()) {
+            MatchOperation operation = MatchOperation.valueOf(rowMatcher.getOperation());
+            if (rowMatcher.getColumnName().startsWith(DownloadEndpoint.TRUSTY_PREFIX)) {
+                Dataframe.InternalColumn internalColumn = Dataframe.InternalColumn.valueOf(rowMatcher.getColumnName().replace(DownloadEndpoint.TRUSTY_PREFIX, ""));
+                if (operation == MatchOperation.BETWEEN) {
+                    df = DownloadUtils.betweenMatcherInternal(df, rowMatcher, internalColumn, false);
+                } else if (operation == MatchOperation.EQUALS) {
+                    df = DownloadUtils.equalsMatcherInternal(df, rowMatcher, internalColumn, false);
+                }
+            } else {
+                int columnIndex = df.getColumnNames().indexOf(rowMatcher.getColumnName());
+                DataType columnType = DownloadUtils.getDataType(metadata, rowMatcher);
+
+                // row match
+                if (operation == MatchOperation.BETWEEN) {
+                    df = DownloadUtils.betweenMatcher(df, rowMatcher, columnIndex, columnType, false);
+                } else if (operation == MatchOperation.EQUALS) {
+                    df = DownloadUtils.equalsMatcher(df, rowMatcher, columnIndex, columnType, false);
+                }
+            }
+        }
+
+        for (RowMatcher rowMatcher : requestPayload.getMatchNone()) {
+            MatchOperation operation = MatchOperation.valueOf(rowMatcher.getOperation());
+            if (rowMatcher.getColumnName().startsWith(DownloadEndpoint.TRUSTY_PREFIX)) {
+                Dataframe.InternalColumn internalColumn = Dataframe.InternalColumn.valueOf(rowMatcher.getColumnName().replace(DownloadEndpoint.TRUSTY_PREFIX, ""));
+                if (operation == MatchOperation.BETWEEN) {
+                    df = DownloadUtils.betweenMatcherInternal(df, rowMatcher, internalColumn, true);
+                } else if (operation == MatchOperation.EQUALS) {
+                    df = DownloadUtils.equalsMatcherInternal(df, rowMatcher, internalColumn, true);
+                }
+            } else {
+                int columnIndex = df.getColumnNames().indexOf(rowMatcher.getColumnName());
+                DataType columnType = DownloadUtils.getDataType(metadata, rowMatcher);
+
+                // row match
+                if (operation == MatchOperation.BETWEEN) {
+                    df = DownloadUtils.betweenMatcher(df, rowMatcher, columnIndex, columnType, true);
+                } else if (operation == MatchOperation.EQUALS) {
+                    df = DownloadUtils.equalsMatcher(df, rowMatcher, columnIndex, columnType, true);
+                }
+            }
+        }
+
+        Dataframe returnDF;
+        if (!requestPayload.getMatchAny().isEmpty()) {
+            returnDF = df.filterByColumnValue(0, v -> false); //get null df
+            for (RowMatcher rowMatcher : requestPayload.getMatchAny()) {
+                MatchOperation operation = MatchOperation.valueOf(rowMatcher.getOperation());
+                if (rowMatcher.getColumnName().startsWith(DownloadEndpoint.TRUSTY_PREFIX)) {
+                    Dataframe.InternalColumn internalColumn = Dataframe.InternalColumn.valueOf(rowMatcher.getColumnName().replace(DownloadEndpoint.TRUSTY_PREFIX, ""));
+                    if (operation == MatchOperation.BETWEEN) {
+                        returnDF.addPredictions(DownloadUtils.betweenMatcherInternal(df, rowMatcher, internalColumn, false).asPredictions());
+                    } else if (operation == MatchOperation.EQUALS) {
+                        returnDF.addPredictions(DownloadUtils.equalsMatcherInternal(df, rowMatcher, internalColumn, false).asPredictions());
+                    }
+                } else {
+                    int columnIndex = df.getColumnNames().indexOf(rowMatcher.getColumnName());
+                    DataType columnType = DownloadUtils.getDataType(metadata, rowMatcher);
+
+                    // row match
+                    if (operation == MatchOperation.BETWEEN) {
+                        returnDF.addPredictions(DownloadUtils.betweenMatcher(df, rowMatcher, columnIndex, columnType, false).asPredictions());
+                    } else if (operation == MatchOperation.EQUALS) {
+                        returnDF.addPredictions(DownloadUtils.equalsMatcher(df, rowMatcher, columnIndex, columnType, false).asPredictions());
+                    }
+                }
+            }
+        } else {
+            returnDF = df;
+        }
+
+        return returnDF;
     }
 }

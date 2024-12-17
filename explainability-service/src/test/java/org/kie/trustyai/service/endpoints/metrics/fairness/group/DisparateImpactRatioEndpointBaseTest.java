@@ -20,9 +20,11 @@ import org.kie.trustyai.service.mocks.MockPrometheusScheduler;
 import org.kie.trustyai.service.mocks.flatfile.MockCSVDatasource;
 import org.kie.trustyai.service.payloads.BaseScheduledResponse;
 import org.kie.trustyai.service.payloads.metrics.BaseMetricResponse;
+import org.kie.trustyai.service.payloads.metrics.fairness.group.AdvancedGroupMetricRequest;
 import org.kie.trustyai.service.payloads.metrics.fairness.group.GroupMetricRequest;
 import org.kie.trustyai.service.payloads.scheduler.ScheduleId;
 import org.kie.trustyai.service.payloads.scheduler.ScheduleList;
+import org.kie.trustyai.service.payloads.service.NameMapping;
 import org.kie.trustyai.service.utils.DataframeGenerators;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -87,40 +89,6 @@ abstract class DisparateImpactRatioEndpointBaseTest {
         assertEquals("DIR", response.getName());
         assertFalse(Double.isNaN(response.getValue()));
     }
-
-    // disabled until better integrated with ODH UI
-    //    @Test
-    //    void postMultiValueCorrect() throws JsonProcessingException {
-    //        datasource.get().reset();
-    //
-    //        final GroupMetricRequest payload = RequestPayloadGenerator.multiValueCorrect();
-    //
-    //        final BaseMetricResponse response = given()
-    //                .contentType(ContentType.JSON)
-    //                .body(payload)
-    //                .when().post()
-    //                .then().statusCode(Response.Status.OK.getStatusCode())
-    //                .extract()
-    //                .body().as(BaseMetricResponse.class);
-    //
-    //        assertEquals("metric", response.getType());
-    //        assertEquals("DIR", response.getName());
-    //        assertFalse(Double.isNaN(response.getValue()));
-    //    }
-    //
-    //    @Test
-    //    void postMultiValueMismatchingType() throws JsonProcessingException {
-    //        datasource.get().reset();
-    //
-    //        final GroupMetricRequest payload = RequestPayloadGenerator.multiValueMismatchingType();
-    //
-    //        given()
-    //                .contentType(ContentType.JSON)
-    //                .body(payload)
-    //                .when().post()
-    //                .then().statusCode(Response.Status.BAD_REQUEST.getStatusCode())
-    //                .body(containsString("Received invalid type for privileged attribute=age: got 'wrong', expected object compatible with 'INT32'"));
-    //    }
 
     @Test
     void postThresh() throws JsonProcessingException {
@@ -633,6 +601,75 @@ abstract class DisparateImpactRatioEndpointBaseTest {
         assertEquals("metric", responseSecond.getType());
         assertEquals("DIR", responseSecond.getName());
         assertFalse(Double.isNaN(responseSecond.getValue()));
+    }
+
+    @Test
+    void postAdvancedCorrect() throws JsonProcessingException {
+        populate();
+
+        final AdvancedGroupMetricRequest payload = RequestPayloadGenerator.advancedCorrect();
+
+        final BaseMetricResponse response = given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/advanced")
+                .then().statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .body().as(BaseMetricResponse.class);
+
+        assertEquals("metric", response.getType());
+        assertEquals("DIR_ADVANCED", response.getName());
+        assertFalse(Double.isNaN(response.getValue()));
+    }
+
+    @Test
+    void postAdvancedIncorrect() {
+        populate();
+
+        final AdvancedGroupMetricRequest payload = RequestPayloadGenerator.advancedIncorrect();
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/advanced")
+                .then().statusCode(Response.Status.BAD_REQUEST.getStatusCode())
+                .extract().response().then()
+                .body(containsString("No feature or output found with name=FIELD_DOES_NOT_EXIST."))
+                .body(containsString("Invalid type for output=income: got 'WRONG_VALUE_TYPE', expected object compatible with 'INT32'"))
+                .body(containsString("RowMatch operation must be one of [BETWEEN, EQUALS], got NO_SUCH_OPERATION"));
+    }
+
+    @Test
+    void postAdvancedNameMappingCorrect() {
+        populate();
+
+        final AdvancedGroupMetricRequest payload = RequestPayloadGenerator.advancedNameMappedCorrect();
+
+        HashMap<String, String> inputMapping = new HashMap<>();
+        HashMap<String, String> outputMapping = new HashMap<>();
+        inputMapping.put("age", "ageMapped");
+        inputMapping.put("race", "raceMapped");
+        inputMapping.put("gender", "genderMapped");
+        outputMapping.put("income", "incomeMapped");
+        NameMapping nameMapping = new NameMapping(MODEL_ID, inputMapping, outputMapping);
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(nameMapping)
+                .basePath("/info")
+                .when().post("/names")
+                .then()
+                .statusCode(200)
+                .body(is("Feature and output name mapping successfully applied."));
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/advanced/")
+                .then().statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .response().then()
+                .body(containsString("The DIR of 0.701754 indicates that the likelihood of the group matching ALL of: [{genderMapped EQUALS 0}"));
     }
 
 }

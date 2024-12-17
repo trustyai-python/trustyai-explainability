@@ -1,6 +1,7 @@
 package org.kie.trustyai.service.prometheus;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.kie.trustyai.service.mocks.flatfile.MockPVCStorage;
 import org.kie.trustyai.service.profiles.flatfile.PVCPrometheusTestProfile;
 
@@ -16,6 +17,14 @@ public class PVCPrometheusTest extends BasePrometheusTest {
 
     @Inject
     Instance<MockPVCStorage> storage;
+
+    @Inject
+    Instance<PrometheusScheduler> scheduler;
+
+    @BeforeEach
+    void clearRequests() {
+        scheduler.get().getAllRequests().clear();
+    }
 
     @AfterEach
     void cleanStorage() {

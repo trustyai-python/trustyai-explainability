@@ -1,5 +1,6 @@
 package org.kie.trustyai.service.endpoints.metrics.fairness.group;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.kie.trustyai.explainability.model.dataframe.Dataframe;
 import org.kie.trustyai.service.mocks.flatfile.MockCSVDatasource;
@@ -30,6 +31,12 @@ class DisparateImpactRatioRequestsEndpointMemoryTest extends DisparateImpactRati
         final Dataframe dataframe = DataframeGenerators.generateRandomDataframe(1000);
         datasource.get().saveDataframe(dataframe, MODEL_ID);
         datasource.get().saveMetadata(MockCSVDatasource.createMetadata(dataframe), MODEL_ID);
+    }
+
+    @AfterEach
+    void clearRequests() {
+        // prevent a failing test from failing other tests erroneously
+        scheduler.get().getAllRequests().clear();
     }
 
 }

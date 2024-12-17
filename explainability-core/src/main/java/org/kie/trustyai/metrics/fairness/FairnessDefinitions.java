@@ -51,6 +51,31 @@ public class FairnessDefinitions {
      * Produce a specific explanation of Group Statistical Parity Difference for the chosen output and
      * computed metric value
      */
+    public static String defineGroupStatisticalParityDifference(
+            String privilegedSelector, String unprivilegedSelector, String favorableSelector,
+            double metricValue) {
+        String specificExample = "The SPD of %f indicates that the likelihood of the group matching " +
+                "%s receiving an outcome matching %s ";
+        if (metricValue > 0) {
+            specificExample += "was %f percentage points higher than that of the group matching %s.";
+        } else if (metricValue < 0) {
+            specificExample += "was %f percentage points lower than that of the group matching %s.";
+        } else {
+            specificExample += "was equivalent to that of group:%s=%s.";
+        }
+
+        return String.format(specificExample,
+                metricValue,
+                privilegedSelector,
+                favorableSelector,
+                metricValue * 100,
+                unprivilegedSelector);
+    }
+
+    /**
+     * Produce a specific explanation of Group Statistical Parity Difference for the chosen output and
+     * computed metric value
+     */
     public static String defineGroupStatisticalParityDifference(Output favorableOutput, double metricValue) {
         String specificExample = "The SPD of %f indicates that the likelihood of the " +
                 "selected group receiving Outcome:%s=%s ";
@@ -95,6 +120,23 @@ public class FairnessDefinitions {
                 outputName, favourableOutputValue.stream().map(Value::toString).collect(Collectors.toList()),
                 metricValue,
                 protectedAttribute, unprivileged);
+    }
+
+    public static String defineGroupDisparateImpactRatio(String privilegedSelector, String unprivilegedSelector, String favorableSelector,
+            double metricValue) {
+        String specificExample = "The DIR of %f indicates that the likelihood of the group matching %s receiving an outcome matching %s ";
+        if (metricValue != 0) {
+            specificExample += "is %f times that of the group matching %s.";
+        } else {
+            specificExample += "is equivalent to that of the group matching %s.";
+        }
+
+        return String.format(specificExample,
+                metricValue,
+                privilegedSelector,
+                favorableSelector,
+                metricValue,
+                unprivilegedSelector);
     }
 
     /**

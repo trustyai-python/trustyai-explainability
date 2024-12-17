@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 public abstract class GroupEndpoint extends BaseEndpoint<GroupMetricRequest> {
+    // names need to be unique!
     protected GroupEndpoint(String name) {
         super(name);
     }

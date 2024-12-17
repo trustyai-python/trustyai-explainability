@@ -37,7 +37,7 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
     }
 
     // see if passed operation exists as a rowmatch operation
-    private boolean checkOperationExists(RowMatcher rowMatch, String modelId, ConstraintValidatorContext context) {
+    private static boolean checkOperationExists(RowMatcher rowMatch, String modelId, ConstraintValidatorContext context) {
         try {
             MatchOperation.valueOf(rowMatch.getOperation());
         } catch (IllegalArgumentException e) {
@@ -54,7 +54,7 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
     }
 
     // check if the trustyai internal column is a valid internal column name
-    private boolean checkInternalColumnValid(RowMatcher rowMatch, String modelId, String internalColumn, ConstraintValidatorContext context) {
+    private static boolean checkInternalColumnValid(RowMatcher rowMatch, String modelId, String internalColumn, ConstraintValidatorContext context) {
         try {
             Dataframe.InternalColumn.valueOf(internalColumn);
         } catch (IllegalArgumentException e) {
@@ -72,7 +72,7 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
     }
 
     // check that the operation chosen for an internal column makes semantic sense
-    private boolean checkInternalColumnOperationValid(RowMatcher rowMatch, String modelId, String internalColumn, ConstraintValidatorContext context) {
+    private static boolean checkInternalColumnOperationValid(RowMatcher rowMatch, String modelId, String internalColumn, ConstraintValidatorContext context) {
         List<String> validBetweens = List.of("TIMESTAMP", "INDEX");
         if (rowMatch.getOperation().equals("BETWEEN") && !validBetweens.contains(internalColumn)) {
             context.buildConstraintViolationWithTemplate(String.format(
@@ -87,7 +87,7 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
     }
 
     // if a timestamp is passed, make sure it's parseable
-    private boolean checkAllTimestampsParseable(RowMatcher rowMatch, String modelId, ConstraintValidatorContext context) {
+    private static boolean checkAllTimestampsParseable(RowMatcher rowMatch, String modelId, ConstraintValidatorContext context) {
         boolean outcome = true;
         for (JsonNode v : rowMatch.getValues()) {
             try {
@@ -105,7 +105,7 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
     }
 
     // make sure the passed values are compatible with the between operation
-    private boolean checkCompatibilityWithBetweenOperation(RowMatcher rowMatch, String modelId, ConstraintValidatorContext context) {
+    private static boolean checkCompatibilityWithBetweenOperation(RowMatcher rowMatch, String modelId, ConstraintValidatorContext context) {
         boolean outcome = true;
         if (rowMatch.getValues().size() != 2) {
             context.buildConstraintViolationWithTemplate(
@@ -133,8 +133,8 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
         return outcome;
     }
 
-    private boolean checkColumnTypeCompatibility(RowMatcher rowMatch, String modelId, StorageMetadata storageMetadata, ConstraintValidatorContext context) {
-        boolean feature = storageMetadata.getInputSchema().getItems().containsKey(rowMatch.getColumnName());
+    private static boolean checkColumnTypeCompatibility(RowMatcher rowMatch, String modelId, StorageMetadata storageMetadata, ConstraintValidatorContext context) {
+        boolean feature = storageMetadata.getInputSchema().getNameMappedItems().containsKey(rowMatch.getColumnName());
         boolean outcome = true;
         for (ValueNode vn : rowMatch.getValues()) {
             if (feature) {
@@ -146,8 +146,7 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
         return outcome;
     }
 
-    @Override
-    public boolean isValid(DataRequestPayload dataRequestPayload, ConstraintValidatorContext context) {
+    public static boolean manualValidation(DataRequestPayload dataRequestPayload, ConstraintValidatorContext context, Instance<DataSource> dataSource) {
         context.disableDefaultConstraintViolation();
         final String modelId = dataRequestPayload.getModelId();
 
@@ -155,6 +154,7 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
             return false;
         } else {
             boolean result = true;
+
             final StorageMetadata storageMetadata = dataSource.get().getMetadata(modelId);
             for (RowMatcher rowMatch : Stream.of(dataRequestPayload.getMatchAll(), dataRequestPayload.getMatchAny(), dataRequestPayload.getMatchNone()).flatMap(Collection::stream)
                     .collect(Collectors.toList())) {
@@ -192,5 +192,10 @@ public class DataDownloadRequestValidator implements ConstraintValidator<ValidDa
 
             return result;
         }
+    }
+
+    @Override
+    public boolean isValid(DataRequestPayload dataRequestPayload, ConstraintValidatorContext context) {
+        return manualValidation(dataRequestPayload, context, dataSource);
     }
 }

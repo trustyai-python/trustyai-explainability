@@ -1,6 +1,7 @@
 package org.kie.trustyai.service.prometheus;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.kie.trustyai.service.mocks.hibernate.MockHibernateStorage;
 import org.kie.trustyai.service.profiles.hibernate.HibernatePrometheusTestProfile;
 
@@ -16,8 +17,16 @@ public class HibernatePrometheusTest extends BasePrometheusTest {
     @Inject
     Instance<MockHibernateStorage> storage;
 
+    @Inject
+    Instance<PrometheusScheduler> scheduler;
+
     protected static final String MODEL_ID = "example1";
     protected static final int N_SAMPLES = 100;
+
+    @BeforeEach
+    void clearRequests() {
+        scheduler.get().getAllRequests().clear();
+    }
 
     @AfterEach
     void cleanStorage() {

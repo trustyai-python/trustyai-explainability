@@ -17,6 +17,7 @@ import org.kie.trustyai.service.endpoints.metrics.RequestPayloadGenerator;
 import org.kie.trustyai.service.mocks.MockPrometheusScheduler;
 import org.kie.trustyai.service.payloads.BaseScheduledResponse;
 import org.kie.trustyai.service.payloads.metrics.BaseMetricResponse;
+import org.kie.trustyai.service.payloads.metrics.fairness.group.AdvancedGroupMetricRequest;
 import org.kie.trustyai.service.payloads.metrics.fairness.group.GroupMetricRequest;
 import org.kie.trustyai.service.payloads.scheduler.ScheduleId;
 import org.kie.trustyai.service.payloads.scheduler.ScheduleList;
@@ -477,7 +478,7 @@ abstract class GroupStatisticalParityDifferenceEndpointBaseTest {
                 .contentType(ContentType.JSON)
                 .body(nameMapping)
                 .basePath("/info")
-                .when().post("/names").peek()
+                .when().post("/names")
                 .then()
                 .statusCode(200)
                 .body(is("Feature and output name mapping successfully applied."));
@@ -513,7 +514,7 @@ abstract class GroupStatisticalParityDifferenceEndpointBaseTest {
                 .contentType(ContentType.JSON)
                 .body(nameMapping)
                 .basePath("/info")
-                .when().post("/names").peek()
+                .when().post("/names")
                 .then()
                 .statusCode(200)
                 .body(is("Feature and output name mapping successfully applied."));
@@ -528,4 +529,40 @@ abstract class GroupStatisticalParityDifferenceEndpointBaseTest {
         assertDoesNotThrow(() -> scheduler.get().calculateManual(true));
     }
 
+    // === ADVANCED METRICS ======
+    @Test
+    void postAdvancedCorrect() throws JsonProcessingException {
+        populate();
+
+        final AdvancedGroupMetricRequest payload = RequestPayloadGenerator.advancedCorrect();
+
+        final BaseMetricResponse response = given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/advanced")
+                .then().statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .body().as(BaseMetricResponse.class);
+
+        assertEquals("metric", response.getType());
+        assertEquals("SPD_ADVANCED", response.getName());
+        assertFalse(Double.isNaN(response.getValue()));
+    }
+
+    @Test
+    void postAdvancedIncorrect() throws JsonProcessingException {
+        populate();
+
+        final AdvancedGroupMetricRequest payload = RequestPayloadGenerator.advancedIncorrect();
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/advanced")
+                .then().statusCode(Response.Status.BAD_REQUEST.getStatusCode())
+                .extract().response().then()
+                .body(containsString("No feature or output found with name=FIELD_DOES_NOT_EXIST."))
+                .body(containsString("Invalid type for output=income: got 'WRONG_VALUE_TYPE', expected object compatible with 'INT32'"))
+                .body(containsString("RowMatch operation must be one of [BETWEEN, EQUALS], got NO_SUCH_OPERATION"));
+    }
 }

@@ -44,14 +44,14 @@ public class UniversalListingEndpoint {
         if (type == null || type.equals(TYPE_ALL)) {
             // Return all requested metrics, for all metric types
             for (Map.Entry<UUID, BaseMetricRequest> entry : scheduler.getAllRequestsFlat().entrySet()) {
-                scheduleList.requests.add(new ScheduleRequest(entry.getKey(), entry.getValue()));
+                scheduleList.requests.add(new ScheduleRequest(entry.getKey(), entry.getValue().getRepresentationForRequestListing()));
             }
         } else if (type.equals(TYPE_FAIRNESS)) {
             // Return all requested metrics, just for bias metrics
             for (Map.Entry<UUID, BaseMetricRequest> entry : scheduler.getAllRequestsFlat().entrySet()) {
                 final String metricName = entry.getValue().getMetricName();
                 if (Objects.equals(metricName, "SPD") || Objects.equals(metricName, "DIR")) {
-                    scheduleList.requests.add(new ScheduleRequest(entry.getKey(), entry.getValue()));
+                    scheduleList.requests.add(new ScheduleRequest(entry.getKey(), entry.getValue().getRepresentationForRequestListing()));
                 }
             }
         } else {

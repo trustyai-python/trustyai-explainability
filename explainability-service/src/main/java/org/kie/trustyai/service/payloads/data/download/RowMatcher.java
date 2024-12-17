@@ -41,4 +41,17 @@ public class RowMatcher {
     public void setColumnName(String columnName) {
         this.columnName = columnName;
     }
+
+    @Override
+    public String toString() {
+        if (operation.equals("EQUALS")) {
+            if (values.size() == 1) {
+                return "{" + columnName + " " + operation + " " + values.get(0) + "}";
+            } else {
+                return "{" + columnName + " " + operation + " one of " + values + "}";
+            }
+        } else {
+            return "{" + columnName + " " + operation + " " + values.get(0) + " and " + values.get(1) + "}";
+        }
+    }
 }

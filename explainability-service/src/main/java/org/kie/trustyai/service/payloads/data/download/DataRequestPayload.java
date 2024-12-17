@@ -50,4 +50,19 @@ public class DataRequestPayload {
                 ", matchNone=" + matchNone +
                 '}';
     }
+
+    public String prettyPrint() {
+        List<String> builder = new ArrayList<>();
+
+        if (!matchAll.isEmpty()) {
+            builder.add("ALL of: " + matchAll);
+        }
+        if (!matchAny.isEmpty()) {
+            builder.add("ANY of: " + matchAny);
+        }
+        if (!matchNone.isEmpty()) {
+            builder.add("NONE of: " + matchNone);
+        }
+        return String.join(", ", builder);
+    }
 }

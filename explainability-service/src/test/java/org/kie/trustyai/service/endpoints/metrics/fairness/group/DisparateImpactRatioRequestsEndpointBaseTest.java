@@ -12,8 +12,11 @@ import org.kie.trustyai.service.endpoints.metrics.RequestPayloadGenerator;
 import org.kie.trustyai.service.mocks.MockPrometheusScheduler;
 import org.kie.trustyai.service.payloads.BaseScheduledResponse;
 import org.kie.trustyai.service.payloads.metrics.BaseMetricRequest;
+import org.kie.trustyai.service.payloads.metrics.fairness.group.AdvancedGroupMetricRequest;
 import org.kie.trustyai.service.payloads.metrics.fairness.group.GroupMetricRequest;
 import org.kie.trustyai.service.payloads.scheduler.ScheduleList;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.restassured.http.ContentType;
 
@@ -171,4 +174,42 @@ abstract class DisparateImpactRatioRequestsEndpointBaseTest {
         assertEquals(2, scheduleList.requests.size());
     }
 
+    @Test
+    void postAdvancedCorrect() throws JsonProcessingException {
+        final AdvancedGroupMetricRequest payload = RequestPayloadGenerator.advancedCorrect();
+        final BaseScheduledResponse response = given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/advanced/request")
+                .then().statusCode(Response.Status.OK.getStatusCode())
+                .extract()
+                .body().as(BaseScheduledResponse.class);
+
+        // ensure serialization is okay
+        given()
+                .when()
+                .get("/advanced/requests")
+                .then().statusCode(200).extract().response().then()
+                .body(containsString("privilegedAttribute\":{\"type\":\"null\",\"value\":\"DataRequestPayload"))
+                .body(containsString("unprivilegedAttribute\":{\"type\":\"null\",\"value\":\"DataRequestPayload"))
+                .body(containsString("favorableOutcome\":{\"type\":\"null\",\"value\":\"DataRequestPayload"))
+                .body(containsString("\"protectedAttribute\":\"Defined by TrustyQL\""))
+                .body(containsString("\"outcomeName\":\"Defined by TrustyQL\""));
+    }
+
+    @Test
+    void postAdvancedIncorrect() throws JsonProcessingException {
+
+        final AdvancedGroupMetricRequest payload = RequestPayloadGenerator.advancedIncorrect();
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/advanced/request")
+                .then().statusCode(Response.Status.BAD_REQUEST.getStatusCode())
+                .extract().response().then()
+                .body(containsString("No feature or output found with name=FIELD_DOES_NOT_EXIST."))
+                .body(containsString("Invalid type for output=income: got 'WRONG_VALUE_TYPE', expected object compatible with 'INT32'"))
+                .body(containsString("RowMatch operation must be one of [BETWEEN, EQUALS], got NO_SUCH_OPERATION"));
+    }
 }

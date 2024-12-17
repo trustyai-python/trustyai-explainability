@@ -79,4 +79,20 @@ public class DisparateImpactRatio {
 
         return probabilityUnprivileged / probabilityPrivileged;
     }
+
+    /**
+     * Calculate disparate impact ratio (DIR).
+     *
+     * @param privileged {@link Dataframe} with the privileged groups
+     * @param privilegedPositive {@link Dataframe} with the privileged groups that received a positive outcome
+     * @param unprivileged {@link Dataframe} with the unprivileged groups
+     * @param unprivilegedPositive {@link Dataframe} with the unprivileged groups that received a positive outcome
+     * @return DIR, between 0 and 1
+     */
+    public static double calculate(Dataframe privileged, Dataframe privilegedPositive, Dataframe unprivileged, Dataframe unprivilegedPositive) {
+        final double probabilityPrivileged = (double) privilegedPositive.getRowDimension() / (double) privileged.getRowDimension();
+        final double probabilityUnprivileged = (double) unprivilegedPositive.getRowDimension() / (double) unprivileged.getRowDimension();
+
+        return probabilityUnprivileged / probabilityPrivileged;
+    }
 }
