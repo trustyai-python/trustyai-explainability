@@ -266,12 +266,12 @@ public class Tensor<T> implements Serializable {
 
     // == UTILITY ======================================================================================================
     // get the product of all elements within a vector
-    private static int vectorProduct(int[] vector) {
+    public static int vectorProduct(int[] vector) {
         return vectorProduct(vector, 0);
     }
 
     // get the product of all elements in the subvector from index "from" to the end
-    private static int vectorProduct(int[] vector, int from) {
+    public static int vectorProduct(int[] vector, int from) {
         int[] slicedV;
         if (from != 0) {
             slicedV = Arrays.copyOfRange(vector, from, vector.length);

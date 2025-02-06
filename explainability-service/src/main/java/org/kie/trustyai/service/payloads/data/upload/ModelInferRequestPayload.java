@@ -2,23 +2,15 @@ package org.kie.trustyai.service.payloads.data.upload;
 
 import java.util.Arrays;
 
-public class ModelInferRequestPayload {
+public class ModelInferRequestPayload extends ModelInferBasePayload {
     private String id;
     private TensorPayload[] inputs;
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public TensorPayload[] getInputs() {
+    public TensorPayload[] getTensorPayloads() {
         return inputs;
     }
 
-    public void setInputs(TensorPayload[] inputs) {
+    public void setTensorPayloads(TensorPayload[] inputs) {
         this.inputs = inputs;
     }
 

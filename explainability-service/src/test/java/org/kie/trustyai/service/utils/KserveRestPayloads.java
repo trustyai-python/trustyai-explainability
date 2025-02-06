@@ -10,26 +10,37 @@ import org.kie.trustyai.service.payloads.data.upload.TensorPayload;
 import com.google.protobuf.ByteString;
 
 public class KserveRestPayloads {
-    private static Object[] generateDataRow(int nCols, String datatype, int offset) {
-        IntStream stream = IntStream.range(0, nCols).map(i -> i + offset);
-        switch (datatype) {
-            case "BOOL":
-                return stream.mapToObj(i -> i % 2 == 0).toArray();
-            case "INT8":
-            case "INT16":
-            case "INT32":
-                return stream.boxed().toArray();
-            case "INT64":
-                return stream.mapToObj(i -> Long.valueOf(Integer.toString(i))).toArray();
-            case "FP32":
-                return stream.mapToObj(Float::valueOf).toArray();
-            case "FP64":
-                return stream.mapToObj(i -> (double) i / 2).toArray();
-            case "BYTES":
-                return stream.mapToObj(i -> ByteString.copyFromUtf8(Integer.toString(i))).toArray();
-            default: // error case
-                return stream.mapToObj(i -> null).toArray();
+    private static Object[][] generateDataRow(int nRows, int nCols, String datatype, int offset) {
+        Object[][] generatedData = new Object[nRows][nCols];
+        for (int r = 0; r < nRows; r++) {
+            IntStream stream = IntStream.range(nCols * r, nCols + (nCols * r)).map(i -> i + offset);
+            switch (datatype) {
+                case "BOOL":
+                    generatedData[r] = stream.mapToObj(i -> i % 2 == 0).toArray();
+                    break;
+                case "INT8":
+                case "INT16":
+                case "INT32":
+                    generatedData[r] = stream.boxed().toArray();
+                    break;
+                case "INT64":
+                    generatedData[r] = stream.mapToObj(i -> Long.valueOf(Integer.toString(i))).toArray();
+                    break;
+                case "FP32":
+                    generatedData[r] = stream.mapToObj(Float::valueOf).toArray();
+                    break;
+                case "FP64":
+                    generatedData[r] = stream.mapToObj(i -> (double) i / 2).toArray();
+                    break;
+                case "BYTES":
+                    generatedData[r] = stream.mapToObj(i -> ByteString.copyFromUtf8(Integer.toString(i))).toArray();
+                    break;
+                default: // error case
+                    generatedData[r] = stream.mapToObj(i -> null).toArray();
+                    break;
+            }
         }
+        return generatedData;
     }
 
     public static TensorPayload generateTensor(int nRows, int nCols, String name, String datatype, int offset) {
@@ -37,17 +48,12 @@ public class KserveRestPayloads {
         tensorPayload.setName(name);
         tensorPayload.setShape(new Number[] { nRows, nCols });
         tensorPayload.setDatatype(datatype);
-
+        Object[][] generatedDataRow = generateDataRow(nRows, nCols, datatype, offset);
         if (nRows == 1) {
-            tensorPayload.setData(generateDataRow(nCols, datatype, offset));
+            tensorPayload.setData(generatedDataRow[0]);
         } else {
-            Object[][] data = new Object[nRows][nCols];
-            for (int i = 0; i < nRows; i++) {
-                data[i] = generateDataRow(nCols, datatype, offset);
-            }
-            tensorPayload.setData(data);
+            tensorPayload.setData(generatedDataRow);
         }
-
         return tensorPayload;
     }
 
@@ -68,8 +74,72 @@ public class KserveRestPayloads {
         responsePayload.setModelName("test-model__isvc-120380123");
         responsePayload.setModelVersion("1");
 
-        requestPayload.setInputs(new TensorPayload[] { generateTensor(nInputRows, nInputCols, "input", datatype, requestOffset) });
-        responsePayload.setOutputs(new TensorPayload[] { generateTensor(nInputRows, nOutputCols, "output", datatype, responseOffset) });
+        requestPayload.setTensorPayloads(new TensorPayload[] { generateTensor(nInputRows, nInputCols, "input", datatype, requestOffset) });
+        responsePayload.setTensorPayloads(new TensorPayload[] { generateTensor(nInputRows, nOutputCols, "output", datatype, responseOffset) });
+
+        payload.setRequest(requestPayload);
+        payload.setResponse(responsePayload);
+
+        return payload;
+    }
+
+    public static ModelInferJointPayload generateMultiInputPayload(int nRows, int nInputCols, int nOutputCols, String datatype, String dataTag) {
+        ModelInferJointPayload payload = new ModelInferJointPayload();
+        payload.setModelName("test-model");
+        payload.setDataTag(dataTag);
+
+        ModelInferRequestPayload requestPayload = new ModelInferRequestPayload();
+        requestPayload.setId("requestID");
+
+        ModelInferResponsePayload responsePayload = new ModelInferResponsePayload();
+        responsePayload.setId("requestID");
+        responsePayload.setModelName("test-model__isvc-120380123");
+        responsePayload.setModelVersion("1");
+
+        TensorPayload[] inputs = new TensorPayload[nInputCols];
+        TensorPayload[] outputs = new TensorPayload[nOutputCols];
+
+        for (int i = 0; i < nInputCols; i++) {
+            inputs[i] = generateTensor(nRows, 1, "input-" + i, datatype, 10 * i);
+        }
+        for (int i = 0; i < nOutputCols; i++) {
+            outputs[i] = generateTensor(nRows, 1, "output-" + i, datatype, 10 * i);
+        }
+
+        requestPayload.setTensorPayloads(inputs);
+        responsePayload.setTensorPayloads(outputs);
+
+        payload.setRequest(requestPayload);
+        payload.setResponse(responsePayload);
+
+        return payload;
+    }
+
+    public static ModelInferJointPayload generateMismatchedShapeNoUniqueNameMultiInputPayload(int nRows, int nInputCols, int nOutputCols, String datatype, String dataTag) {
+        ModelInferJointPayload payload = new ModelInferJointPayload();
+        payload.setModelName("test-model");
+        payload.setDataTag(dataTag);
+
+        ModelInferRequestPayload requestPayload = new ModelInferRequestPayload();
+        requestPayload.setId("requestID");
+
+        ModelInferResponsePayload responsePayload = new ModelInferResponsePayload();
+        responsePayload.setId("requestID");
+        responsePayload.setModelName("test-model__isvc-120380123");
+        responsePayload.setModelVersion("1");
+
+        TensorPayload[] inputs = new TensorPayload[nInputCols];
+        TensorPayload[] outputs = new TensorPayload[nOutputCols];
+
+        for (int i = 0; i < nInputCols; i++) {
+            inputs[i] = generateTensor(nRows + i, 1, "input", datatype, 10 * i);
+        }
+        for (int i = 0; i < nOutputCols; i++) {
+            outputs[i] = generateTensor(nRows, 1, "output", datatype, 10 * i);
+        }
+
+        requestPayload.setTensorPayloads(inputs);
+        responsePayload.setTensorPayloads(outputs);
 
         payload.setRequest(requestPayload);
         payload.setResponse(responsePayload);

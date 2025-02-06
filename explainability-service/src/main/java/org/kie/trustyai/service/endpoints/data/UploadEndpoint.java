@@ -146,7 +146,7 @@ public class UploadEndpoint {
     // return null, Response.SERVER_ERROR if unsuccessful
     private Pair<List<PredictionOutput>, Response> parsePredictionOutputs(ModelInferJointPayload jointPayload, int nPredictionInputs) {
         List<PredictionOutput> predictionOutputs;
-        if (jointPayload.getResponse() != null && jointPayload.getResponse().getOutputs().length > 0) {
+        if (jointPayload.getResponse() != null && jointPayload.getResponse().getTensorPayloads().length > 0) {
             // parse outputs
             ModelInferResponse.Builder inferResponseBuilder = ModelInferResponse.newBuilder();
             inferResponseBuilder.setModelName(jointPayload.getModelName());
@@ -205,7 +205,7 @@ public class UploadEndpoint {
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/upload")
     public Response upload(ModelInferJointPayload jointPayload) throws DataframeCreateException {
-        if (jointPayload.getRequest() == null || jointPayload.getRequest().getInputs().length < 1) {
+        if (jointPayload.getRequest() == null || jointPayload.getRequest().getTensorPayloads().length < 1) {
             return Response.serverError().entity("Directly uploaded datapoints must specify at least one `inputs` field.").status(Response.Status.BAD_REQUEST).build();
         }
 
@@ -219,7 +219,7 @@ public class UploadEndpoint {
         }
 
         List<PredictionInput> predictionInputs;
-        String[] providedIDs = jointPayload.getRequest().getInputs()[0].getExecutionIDs();
+        String[] providedIDs = jointPayload.getRequest().getTensorPayloads()[0].getExecutionIDs();
         try {
             predictionInputs = TensorConverter.parseKserveModelInferRequest(inferRequestBuilder.build());
             if (providedIDs != null && providedIDs.length != predictionInputs.size()) {

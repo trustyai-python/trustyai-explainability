@@ -90,7 +90,7 @@ public class KServePayloadConverters {
         if (rootNode.has("instances")) {
             InferenceLoggerInput originalFormat = objectMapper.treeToValue(rootNode, InferenceLoggerInput.class);
             TensorPayload[] tps = toTensorPayload(originalFormat.getInstances(), "feature");
-            payloadInfer.setInputs(tps);
+            payloadInfer.setTensorPayloads(tps);
         } else {
             InferenceLoggerGeneral newFormat = objectMapper.treeToValue(rootNode, InferenceLoggerGeneral.class);
             TensorPayload[] tensorPayloads = newFormat.getInputs().stream().map(i -> {
@@ -102,7 +102,7 @@ public class KServePayloadConverters {
                 return tp;
             }).toArray(TensorPayload[]::new);
 
-            payloadInfer.setInputs(tensorPayloads);
+            payloadInfer.setTensorPayloads(tensorPayloads);
         }
         return payloadInfer;
     }
@@ -119,7 +119,7 @@ public class KServePayloadConverters {
             tp.setShape(new Number[] { ilo.getRawPredictions().size() });
             tp.setDatatype(TensorConverterUtils.inferKServeType(ilo.getRawPredictions().get(0).getObject()).toString());
             tp.setName("output");
-            payloadInfer.setOutputs(new TensorPayload[] { tp });
+            payloadInfer.setTensorPayloads(new TensorPayload[] { tp });
         } else {
             TensorPayload[] tensorPayloads = ilo.getOutputs().stream().map(i -> {
                 TensorPayload tp = new TensorPayload();
@@ -129,7 +129,7 @@ public class KServePayloadConverters {
                 tp.setShape(processShape(i.getShape()));
                 return tp;
             }).toArray(TensorPayload[]::new);
-            payloadInfer.setOutputs(tensorPayloads);
+            payloadInfer.setTensorPayloads(tensorPayloads);
         }
         return payloadInfer;
     }
