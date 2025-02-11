@@ -47,3 +47,5 @@ RUN mkdir -p $HOME/.kube && \
 # ADD kubeconfig /root/.kube/config
 
 CMD $HOME/peak/installandtest.sh
+
+# This is a dummy PR to test the CI
