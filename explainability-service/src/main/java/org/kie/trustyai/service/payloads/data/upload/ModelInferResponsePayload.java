@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ModelInferResponsePayload {
+public class ModelInferResponsePayload extends ModelInferBasePayload {
     @JsonProperty("model_name")
     private String modelName;
 
@@ -32,14 +32,6 @@ public class ModelInferResponsePayload {
         this.modelVersion = modelVersion;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public Map<String, Object> getParameters() {
         return parameters;
     }
@@ -48,11 +40,11 @@ public class ModelInferResponsePayload {
         this.parameters = parameters;
     }
 
-    public TensorPayload[] getOutputs() {
+    public TensorPayload[] getTensorPayloads() {
         return outputs;
     }
 
-    public void setOutputs(TensorPayload[] outputs) {
+    public void setTensorPayloads(TensorPayload[] outputs) {
         this.outputs = outputs;
     }
 

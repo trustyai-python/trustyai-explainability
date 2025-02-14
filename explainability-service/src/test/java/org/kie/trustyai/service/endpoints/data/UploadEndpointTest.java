@@ -84,6 +84,65 @@ class UploadEndpointTest {
                 }
             }
         }
+        emptyStorage();
+    }
+
+    @Test
+    void uploadMultiInputData() throws JsonProcessingException {
+        int[] testRows = new int[] { 1, 3, 5, 250 };
+        int[] testInputCols = new int[] { 2, 6 };
+        int[] testOutputCols = new int[] { 4 };
+        String[] testDatatypes = new String[] { "INT64", "INT32", "FP32", "FP64", "BOOL" };
+        String dataTag = "TRAINING";
+
+        for (int nRows : testRows) {
+            for (int nInputCols : testInputCols) {
+                for (int nOutputCols : testOutputCols) {
+                    for (String datatype : testDatatypes) {
+                        ModelInferJointPayload payload = KserveRestPayloads.generateMultiInputPayload(nRows, nInputCols, nOutputCols, datatype, dataTag);
+
+                        emptyStorage();
+
+                        given()
+                                .contentType(ContentType.JSON)
+                                .body(payload)
+                                .when().post("/upload")
+                                .then()
+                                .statusCode(RestResponse.StatusCode.OK)
+                                .body(containsString(nRows + " datapoints"));
+
+                        // check that tagging is correctly applied
+                        Dataframe df = datasource.get().getDataframe(payload.getModelName());
+                        Dataframe trainDF = df.filterRowsByTagEquals(dataTag);
+                        Dataframe nonTrainDF = df.filterRowsByTagNotEquals(dataTag);
+
+                        assertEquals(nRows, df.getRowDimension());
+                        assertEquals(nInputCols + nOutputCols, df.getColumnDimension());
+                        assertEquals(nInputCols, df.getInputNames().size());
+                        assertEquals(nOutputCols, df.getOutputNames().size());
+                        assertEquals(nRows, trainDF.getRowDimension());
+                        assertEquals(0, nonTrainDF.getRowDimension());
+                    }
+                }
+            }
+        }
+        emptyStorage();
+    }
+
+    @Test
+    void uploadMultiInputDataNoUniqueName() throws JsonProcessingException {
+        ModelInferJointPayload payload = KserveRestPayloads.generateMismatchedShapeNoUniqueNameMultiInputPayload(250, 4, 3, "FP64", "TRAINING");
+
+        emptyStorage();
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .when().post("/upload").peek()
+                .then()
+                .statusCode(RestResponse.StatusCode.BAD_REQUEST)
+                .body(containsString("One or more errors"), containsString("unique names"), containsString("first dimension"));
+
     }
 
     @Test
@@ -170,7 +229,7 @@ class UploadEndpointTest {
 
                         ModelInferJointPayload payloadGroundTruth = KserveRestPayloads.generatePayload(nInputRows, nInputCols, nOutputCols, datatype, "TRAINING", 0, 1);
                         payloadGroundTruth.setRequest(payload.getRequest());
-                        payloadGroundTruth.getRequest().getInputs()[0].setExecutionIDs(ids.toArray(String[]::new));
+                        payloadGroundTruth.getRequest().getTensorPayloads()[0].setExecutionIDs(ids.toArray(String[]::new));
                         payloadGroundTruth.setGroundTruth(true);
 
                         postTest(payloadGroundTruth, RestResponse.StatusCode.OK, List.of(nInputRows + " ground truths"));
@@ -199,7 +258,7 @@ class UploadEndpointTest {
         List<String> ids = originalDF.getIds();
 
         payload1.setRequest(payload1.getRequest());
-        payload1.getRequest().getInputs()[0].setExecutionIDs(ids.toArray(String[]::new));
+        payload1.getRequest().getTensorPayloads()[0].setExecutionIDs(ids.toArray(String[]::new));
         payload1.setGroundTruth(true);
         postTest(payload1, RestResponse.StatusCode.BAD_REQUEST, List.of(
                 "Found fatal mismatches between uploaded data and recorded inference data:",
@@ -220,7 +279,7 @@ class UploadEndpointTest {
         List<String> ids = originalDF.getIds();
 
         payload1.setRequest(payload1.getRequest());
-        payload1.getRequest().getInputs()[0].setExecutionIDs(ids.toArray(String[]::new));
+        payload1.getRequest().getTensorPayloads()[0].setExecutionIDs(ids.toArray(String[]::new));
         payload1.setGroundTruth(true);
         postTest(payload1, RestResponse.StatusCode.BAD_REQUEST, List.of(
                 "Found fatal mismatches between uploaded data and recorded inference data:",
@@ -239,7 +298,7 @@ class UploadEndpointTest {
         List<String> ids = originalDF.getIds();
 
         payload1.setRequest(payload1.getRequest());
-        payload1.getRequest().getInputs()[0].setExecutionIDs(ids.toArray(String[]::new));
+        payload1.getRequest().getTensorPayloads()[0].setExecutionIDs(ids.toArray(String[]::new));
         payload1.setGroundTruth(true);
         postTest(payload1, RestResponse.StatusCode.BAD_REQUEST, List.of(
                 "Found fatal mismatches between uploaded data and recorded inference data:",
